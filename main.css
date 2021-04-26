@@ -1,0 +1,12 @@
+body {
+  margin: 0;
+  position: fixed;
+  overscroll-behavior-y: contain;
+  overflow: hidden;
+}
+
+#info {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+}
