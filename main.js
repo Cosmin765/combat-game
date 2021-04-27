@@ -15,8 +15,7 @@ function main()
     if(innerHeight / innerWidth < 16 / 9) {
         cvs.style.height = "100vh";
         ratio = innerHeight / 800;
-    }
-    else {
+    } else {
         cvs.style.width = "100vw";
         ratio = innerWidth / 450;
     }
@@ -33,8 +32,6 @@ function render(time)
 {
     ctx.fillStyle = "#00ff00";
     ctx.fillRect(0, 0, cvs.width, cvs.height);
-    
-    ctx.fillStyle = "#00ffff";
     
     joystick.render();
     

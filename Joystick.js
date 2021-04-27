@@ -28,12 +28,13 @@ class Joystick extends Interactive
     
     update(pos)
     {
-        this.ballPos = pos.copy();
+        const dist = this.pos.dist(pos);
 
-        const dist = ...;
-
-        if(dist > this.r) {
-            
+        if(dist < this.r) {
+          this.ballPos = pos.copy();
+        } else {
+          const dir = pos.copy().sub(this.pos);
+          this.ballPos = dir.limit(this.r).add(this.pos);
         }
     }
     

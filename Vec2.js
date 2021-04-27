@@ -35,9 +35,38 @@ class Vec2
         return this.x === v.x && this.y == v.y;
     }
 
-    dist(v)
+    dist(v = new Vec2())
     {
         return Math.sqrt(Math.pow(v.x - this.x, 2) + Math.pow(v.y - this.y, 2));
+    }
+    
+    dot(v)
+    {
+      return this.x * v.x + this.y * v.y;
+    }
+    
+    normalize()
+    {
+      const len = this.dist();
+      this.x /= len; this.y /= len;
+      return this;
+    }
+    
+    angle(v = new Vec2(1, 0))
+    {
+      const norm = this.normalize();
+      const dot = norm.dot(v);
+      const aMod = this.dist();
+      const bMod = v.dist();
+      
+      const fact = (norm.y > 0 ? 1 : -1);
+      
+      return fact * Math.acos(dot) / (aMod * bMod);
+    }
+    
+    limit(r)
+    {
+      return this.normalize().mult(r);
     }
     
     [Symbol.iterator] = function*() {
