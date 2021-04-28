@@ -22,7 +22,38 @@ const [ width, height ] = resolutions[2];
 
 const adapt = val => width / 960 * val;
 
-let img = new Image();
+let textures = {
+  player: {
+    idle: [],
+    slide: [],
+    run: [],
+  },
+};
+
+function loadTexture(name, container)
+{
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = "./assets/" + name + ".png";
+    img.onload = () => {
+      container.push(img);
+      resolve();
+    }
+  });
+}
+
+async function loadAnimations(options)
+{
+  for(const option of options)
+  {
+    const [ name, container ] = option;
+    for(let i = 0; i < 10; ++i)
+    {
+      const filename = name + `__00${i}`;
+      await loadTexture(filename, container);
+    }
+  }
+}
 
 function main()
 {
@@ -38,12 +69,20 @@ function main()
     buttons.push(new Button(new Vec2(width - adapt(150), height - adapt(200)), "A"));
     buttons.push(new Button(new Vec2(width - adapt(200), height - adapt(125)), "B"));
     buttons.push(new Button(new Vec2(width - adapt(100), height - adapt(125)), "C"));
-
-    setupEvents();
-
-    img.src = "./assets/Idle__000.png";
     
-    requestAnimationFrame(render);
+    player = new Player(new Vec2(width / 2, height / 2), textures.player);
+    
+    setupEvents();
+    
+    const options = [
+      ["Idle", textures.player.idle],
+      ["Slide", textures.player.slide],
+      ["Run", textures.player.run],
+    ];
+    
+    loadAnimations(options).then(() => {
+      requestAnimationFrame(render);
+    });
 }
 
 function adjustCanvas()
@@ -76,10 +115,7 @@ function render(time)
         ob.render();
     }
 
-    const w = 100;
-    ctx.drawImage(img, width / 2 - w / 2, height / 2 - w / 2, w, w * img.height / img.width);
-
-    $("#info").innerHTML = joystick.dir().angle();
+    player.render();
 
     ctx.restore();
     
