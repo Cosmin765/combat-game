@@ -2,8 +2,10 @@ window.onload = main;
 
 const $ = name => document.querySelector(name);
 
-let cvs, ctx, joystick;
+let cvs, ctx, joystick, player;
 let ratio;
+
+const buttons = [];
 
 const resolutions = [
     [ 640, 360 ],
@@ -18,6 +20,10 @@ const resolutions = [
 
 const [ width, height ] = resolutions[2];
 
+const adapt = val => width / 960 * val;
+
+let img = new Image();
+
 function main()
 {
     cvs = $("#c");
@@ -28,10 +34,15 @@ function main()
 
     ctx = cvs.getContext("2d");
     
-    joystick = new Joystick(new Vec2(width / 2, height / 2));
+    joystick = new Joystick(new Vec2(adapt(150), height - adapt(150)));
+    buttons.push(new Button(new Vec2(width - adapt(150), height - adapt(200)), "A"));
+    buttons.push(new Button(new Vec2(width - adapt(200), height - adapt(125)), "B"));
+    buttons.push(new Button(new Vec2(width - adapt(100), height - adapt(125)), "C"));
 
     setupEvents();
 
+    img.src = "./assets/Idle__000.png";
+    
     requestAnimationFrame(render);
 }
 
@@ -60,8 +71,15 @@ function render(time)
 
     joystick.render();
 
-    $("#info").innerHTML = [joystick.dir().angle()];
+    for(const ob of buttons)
+    {
+        ob.render();
+    }
 
+    const w = 100;
+    ctx.drawImage(img, width / 2 - w / 2, height / 2 - w / 2, w, w * img.height / img.width);
+
+    $("#info").innerHTML = joystick.dir().angle();
 
     ctx.restore();
     
@@ -94,6 +112,13 @@ function setupEvents()
             
             if(joystick.clicked(pos))
                 joystick.setTouch(touch.identifier, pos);
+
+            for(const btn of buttons)
+            {
+                if(btn.clicked(pos)) {
+                    btn.press();
+                }
+            }
         }
     });
 
@@ -103,9 +128,8 @@ function setupEvents()
             const touch = e.touches[i];
             const pos = adjustVec(new Vec2(touch.pageX, touch.pageY));
 
-            if(joystick.touchID === touch.identifier) {
+            if(joystick.touchID === touch.identifier)
                 joystick.update(pos);
-            }
         }
     });
 
@@ -125,6 +149,26 @@ function setupEvents()
 
         if(!present) {
             joystick.removeTouch();
+        }
+
+        for(const btn of buttons)
+        {
+            let present = false;
+
+            for(let i = 0; i < e.touches.length; ++i)
+            {
+                const touch = e.touches[i];
+                const pos = adjustVec(new Vec2(touch.pageX, touch.pageY));
+
+                if(btn.clicked(pos)) {
+                    present = true;
+                    break;
+                }
+            }
+
+            if(!present) {
+                btn.release();
+            }
         }
     });
 }

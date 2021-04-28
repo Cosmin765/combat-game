@@ -7,7 +7,7 @@ class Joystick extends Interactive
         super(pos.x - r, pos.y - r, r * 2, r * 2);
         
         this.r = r;
-        this.pos = pos || new Vec2();
+        this.pos = pos.copy();
         this.ballPos = this.pos.copy();
         this.lastPos = this.pos.copy();
         this.touchID = null;
@@ -50,7 +50,7 @@ class Joystick extends Interactive
     {
         ctx.strokeStyle = "#00ccff";
         ctx.lineWidth = 5 * ratio;
-        ctx.fillStyle = "rgba(0, 255, 255, 0.2)";
+        ctx.fillStyle = "rgba(0, 255, 255, 0.7)";
         ctx.beginPath();
         ctx.arc(...this.pos, this.r, 0, 2 * Math.PI);
         ctx.stroke();
