@@ -68,6 +68,23 @@ class Vec2
     {
       return this.normalize().mult(r);
     }
+
+    set(x, y)
+    {
+        this.x = x; this.y = y; return this;
+    }
+
+    multMat(mat)
+    {
+        const x = this.x * mat[0][0] + this.y * mat[0][1];
+        const y = this.x * mat[1][0] + this.y * mat[1][1];
+        return this.set(x, y);
+    }
+
+    toFixed(n)
+    {
+        this.x = this.x.toFixed(n); this.y = this.y.toFixed(n); return this;
+    }
     
     [Symbol.iterator] = function*() {
         yield this.x; yield this.y;

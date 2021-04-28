@@ -3,10 +3,15 @@ body {
   position: fixed;
   overscroll-behavior-y: contain;
   overflow: hidden;
+  background: black;
 }
 
 #info {
   position: fixed;
   bottom: 0;
   left: 0;
+}
+
+#c {
+  background: white;
 }
