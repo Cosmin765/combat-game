@@ -2,7 +2,7 @@ class Joystick extends Interactive
 {
     constructor(pos)
     {
-        const r = 50 * ratio;
+        const r = adapt(60);
     
         super(pos.x - r, pos.y - r, r * 2, r * 2);
         
@@ -49,7 +49,7 @@ class Joystick extends Interactive
     render()
     {
         ctx.strokeStyle = "#00ccff";
-        ctx.lineWidth = 5 * ratio;
+        ctx.lineWidth = adapt(5);
         ctx.fillStyle = "rgba(0, 255, 255, 0.7)";
         ctx.beginPath();
         ctx.arc(...this.pos, this.r, 0, 2 * Math.PI);

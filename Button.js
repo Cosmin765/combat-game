@@ -2,7 +2,7 @@ class Button extends Interactive
 {
     constructor(pos, letter)
     {
-        const r = 30 * ratio;
+        const r = adapt(40);
 
         super(pos.x - r, pos.y - r, r * 2, r * 2);
         this.pos = pos.copy();
