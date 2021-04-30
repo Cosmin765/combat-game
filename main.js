@@ -17,7 +17,7 @@ const resolutions = [
     [ 1920, 1080]
 ];
 
-const [ width, height ] = resolutions[2];
+const [ width, height ] = resolutions[7];
 
 const adapt = val => width / 960 * val;
 const random = (min, max) => Math.random() * (max - min) + min;
@@ -117,10 +117,10 @@ function adjustCanvas()
 {
     if(innerHeight / innerWidth > 16 / 9) {
         cvs.style.width = "100vw";
-        ratio = innerWidth / height;
+        ratio = height / innerWidth;
     } else {
         cvs.style.height = "100vh";
-        ratio = innerHeight / width;
+        ratio = width / innerHeight;
     }
 }
 
@@ -195,8 +195,8 @@ function getRot(angle)
 
 function adjustVec(v)
 {
-    v.div(ratio).multMat(getRot(-Math.PI / 2));
-    v.y = cvs.width + v.y;
+    v.mult(ratio).multMat(getRot(-Math.PI / 2));
+    v.y = height + v.y;
 
     return v;
 }
