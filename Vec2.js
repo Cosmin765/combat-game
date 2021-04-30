@@ -85,6 +85,11 @@ class Vec2
     {
         this.x = this.x.toFixed(n); this.y = this.y.toFixed(n); return this;
     }
+
+    modify(func)
+    {
+        this.x = func(this.x); this.y = func(this.y); return this;
+    }
     
     [Symbol.iterator] = function*() {
         yield this.x; yield this.y;

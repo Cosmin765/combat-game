@@ -2,9 +2,8 @@ window.onload = main;
 
 const $ = name => document.querySelector(name);
 
-let cvs, ctx, joystick, player;
-let ratio;
-
+let cvs, ctx, joystick, player, ratio;
+const zombies = [];
 const buttons = [];
 
 const resolutions = [
@@ -18,9 +17,10 @@ const resolutions = [
     [ 1920, 1080]
 ];
 
-const [ width, height ] = resolutions[3];
+const [ width, height ] = resolutions[2];
 
 const adapt = val => width / 960 * val;
+const random = (min, max) => Math.random() * (max - min) + min;
 
 let textures = {
   player: {
@@ -29,6 +29,18 @@ let textures = {
     run: [],
     attack: [],
     throw: [],
+  },
+  zombie: {
+    male: {
+        idle: [],
+        walk: [],
+        attack: [],
+    },
+    female: {
+        idle: [],
+        walk: [],
+        attack: [],
+    },
   },
   background: null,
 };
@@ -46,10 +58,10 @@ async function loadAnimations(options)
 {
   for(const option of options)
   {
-    const [ name, container ] = option;
-    for(let i = 0; i < 10; ++i)
+    const [ name, container, count ] = option;
+    for(let i = 0; i < count; ++i)
     {
-        const filename = name + `__00${i}.png`;
+        const filename = name + `${i}.png`;
         const img = await loadTexture(filename, container);
         container.push(img);
     }
@@ -64,7 +76,24 @@ async function main()
 
     adjustCanvas();
 
+    const options = [
+        ["player/Idle__00", textures.player.idle, 10],
+        ["player/Run__00", textures.player.run, 10],
+        ["player/Attack__00", textures.player.attack, 10],
+        ["player/Throw__00", textures.player.throw, 10],
+        ["zombie/male/Idle", textures.zombie.male.idle, 15],
+        ["zombie/male/Walk", textures.zombie.male.walk, 10],
+        ["zombie/male/Attack", textures.zombie.male.attack, 8],
+        ["zombie/female/Idle", textures.zombie.female.idle, 15],
+        ["zombie/female/Walk", textures.zombie.female.walk, 10],
+        ["zombie/female/Attack", textures.zombie.female.attack, 8],
+      ];
+      
+    await loadAnimations(options);
+    textures.background = await loadTexture("Background.png");
+
     ctx = cvs.getContext("2d");
+    setupEvents();
     
     joystick = new Joystick(new Vec2(adapt(150), height - adapt(150)));
     buttons.push(new Button(new Vec2(width - adapt(150), height - adapt(220)), "A"));
@@ -73,17 +102,13 @@ async function main()
     
     player = new Player(new Vec2(width / 2, height / 2 + adapt(60)));
     
-    setupEvents();
-    
-    const options = [
-      ["player/Idle", textures.player.idle],
-      ["player/Run", textures.player.run],
-      ["player/Attack", textures.player.attack],
-      ["player/Throw", textures.player.throw],
-    ];
-    
-    await loadAnimations(options);
-    textures.background = await loadTexture("Background.png");
+    for(let i = 0; i < 5; ++i)
+    {
+        const tex = Math.random() > 0.5 ? textures.zombie.male : textures.zombie.female;
+        const zombie = new Zombie(new Vec2(width / 2 + adapt(Math.random() * 500), height / 2 + adapt(60)), tex);
+        zombies.push(zombie);
+    }
+
     
     requestAnimationFrame(render);
 }
@@ -103,16 +128,8 @@ function update()
 {
     const dir = joystick.dir();
 
-    if(dir.dist() > 0) {
-        player.setAnim(textures.player.run);
-    } else {
-        player.setAnim(textures.player.idle);
-    }
-
-    if(player.anim === textures.player.run) {
-        if((player.dir < 0 && -offset.x > 0) || (player.dir > 0 && adapt(-offset.x) < height * textures.background.width / textures.background.height - adapt(width * 3 / 4)))
-            offset.x -= player.dir * 8;
-    }
+    if(dir.dist() > 0) player.setAnim(textures.player.run);
+    else player.setAnim(textures.player.idle);
 
     if(buttons[0].pressed)
         player.setAnim(textures.player.attack, false);
@@ -123,6 +140,9 @@ function update()
     player.setDir(dir.x);
 
     player.update();
+
+    for(const zombie of zombies)
+        zombie.update();
 }
 
 let offset = new Vec2(0, 0);
@@ -142,16 +162,23 @@ function render(time)
     ctx.fillRect(0, 0, width, height);
     
     {
+        ctx.save();
+        ctx.translate(offset.x, 0);
         const tex = textures.background;
-        ctx.drawImage(tex, 0 + offset.x, 0, height * tex.width / tex.height, height);
+        ctx.drawImage(tex, 0, 0, height * tex.width / tex.height, height);
+
+        for(const zombie of zombies)
+            zombie.render();
+        
+        ctx.restore();
     }
+
+    player.render();
 
     joystick.render();
 
     for(const btn of buttons)
         btn.render();
-
-    player.render();
 
     ctx.restore();
     

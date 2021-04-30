@@ -1,49 +1,20 @@
-class Player
+class Player extends Animatable
 {
     constructor(pos)
     {
+        super(new Vec2(adapt(200), adapt(200)));
         this.pos = pos.copy();
-        this.dims = new Vec2(adapt(200), adapt(200));
-        this.animIndex = 0;
-        this.anim = [];
         this.dir = 1;
-        this.acc = 0;
-        this.animDelay = 2.5;
-
-        this.interruptible = true;
-    }
-    
-    updateDims()
-    {
-        const texture = this.anim[this.animIndex];
-        this.dims.x = adapt(this.dims.y * texture.width / texture.height);
-    }
-    
-    updateAnim()
-    {
-        this.acc++;
-        this.acc %= (10 * this.animDelay) | 0;
-
-        this.animIndex = (this.acc / this.animDelay) | 0;
-    }
-    
-    setAnim(anim, interruptible = true)
-    {
-        if(this.interruptible || this.acc === 0)
-        {
-            if(anim != this.anim)
-                this.acc = 0;
-
-            this.anim = anim;
-            this.interruptible = interruptible;
-        }
-
-        this.updateDims();
     }
 
     update()
     {
         this.updateAnim();
+
+        if(this.anim === textures.player.run) {
+            if((player.dir < 0 && adapt(-offset.x) > adapt(20)) || (this.dir > 0 && adapt(-offset.x) < adapt(height) * textures.background.width / textures.background.height - adapt(width + 20)))
+                offset.x -= adapt(this.dir * 8);
+        }
     }
 
     setDir(dir)
