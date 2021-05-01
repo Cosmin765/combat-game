@@ -3,6 +3,7 @@ window.onload = main;
 const $ = name => document.querySelector(name);
 
 let cvs, ctx, joystick, player, ratio;
+const offset = new Vec2(0, 0);
 const zombies = [];
 const buttons = [];
 
@@ -17,12 +18,12 @@ const resolutions = [
     [ 1920, 1080]
 ];
 
-const [ width, height ] = resolutions[7];
+const [ width, height ] = resolutions[2];
 
 const adapt = val => width / 960 * val;
 const random = (min, max) => Math.random() * (max - min) + min;
 
-let textures = {
+const textures = {
   player: {
     idle: [],
     slide: [],
@@ -47,7 +48,7 @@ let textures = {
 
 function loadTexture(filename)
 {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     const img = new Image();
     img.src = `./assets/${filename}`;
     img.onload = () => resolve(img);
@@ -66,6 +67,17 @@ async function loadAnimations(options)
         container.push(img);
     }
   }
+}
+
+function adjustCanvas()
+{
+    if(innerHeight / innerWidth > 16 / 9) {
+        cvs.style.width = "100vw";
+        ratio = height / innerWidth;
+    } else {
+        cvs.style.height = "100vh";
+        ratio = width / innerHeight;
+    }
 }
 
 async function main()
@@ -113,17 +125,6 @@ async function main()
     requestAnimationFrame(render);
 }
 
-function adjustCanvas()
-{
-    if(innerHeight / innerWidth > 16 / 9) {
-        cvs.style.width = "100vw";
-        ratio = height / innerWidth;
-    } else {
-        cvs.style.height = "100vh";
-        ratio = width / innerHeight;
-    }
-}
-
 function update()
 {
     const dir = joystick.dir();
@@ -144,8 +145,6 @@ function update()
     for(const zombie of zombies)
         zombie.update();
 }
-
-let offset = new Vec2(0, 0);
 
 function render(time)
 {
@@ -209,8 +208,10 @@ function setupEvents()
             const touch = e.touches[i];
             const pos = adjustVec(new Vec2(touch.pageX, touch.pageY));
             
-            if(joystick.clicked(pos))
+            if(joystick.clicked(pos)) {
                 joystick.setTouch(touch.identifier, pos);
+                continue;
+            }
 
             for(const btn of buttons)
             {
