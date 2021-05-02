@@ -6,6 +6,7 @@ class Player extends Animatable
         this.pos = pos.copy();
         this.dir = 1;
         this.hb = new HealthBar(10);
+        this.ableToThrow = true;
     }
 
     update()
@@ -20,14 +21,35 @@ class Player extends Animatable
         if(this.anim === textures.player.attack) {
             for(const zombie of zombies)
             {
-                const halfdims = this.dims.copy().div(2);
-                const playerPos = this.pos.copy().sub(halfdims).add(offset.copy().mult(-1));
+                const dims = this.dims.copy().div(2);
+                const playerPos = this.getTopLeft(dims);
 
-                if(zombie.collided(playerPos, this.dims)) {
-                    zombie.damage(0.1);
+                const dirVec = zombie.getTopLeft().copy().sub(playerPos);
+
+                if(zombie.collided(playerPos, dims.copy()) && dirVec.x * this.dir >= 0 && !zombie.hit) {
+                    zombie.damage(1);
+                    zombie.vel.set(20 * this.dir, -5).modify(adapt);
+                    zombie.hit = true;
                 }
             }
         }
+    }
+
+    damage(amount)
+    {
+        this.hb.decrease(amount);
+
+        // if(this.hb.dead) {
+        //     this.setAnim(textures.player.dead);
+        // }
+    }
+
+    getTopLeft(dims = this.dims)
+    {
+        const halfdims = dims.copy().div(2);
+        const pos = this.pos.copy().sub(halfdims).add(offset.copy().mult(-1));
+
+        return pos;
     }
 
     setDir(dir)
@@ -35,11 +57,6 @@ class Player extends Animatable
         if(dir === 0) return;
         this.dir = dir < 0 ? -1 : 1;
     }
-
-    // push_back(dir) // C++ developers will understand
-    // {
-
-    // }
 
     render()
     {
@@ -54,8 +71,8 @@ class Player extends Animatable
 
         ctx.drawImage(texture, 0, 0, ...this.dims);
 
-        ctx.strokeStyle = "red";
-        ctx.strokeRect(0, 0, ...this.dims);
+        // ctx.strokeStyle = "red";
+        // ctx.strokeRect(0, 0, ...this.dims);
 
         ctx.restore()
 

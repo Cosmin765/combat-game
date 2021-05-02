@@ -9,6 +9,9 @@ class Zombie extends Animatable
         this.textures = tex;
         this.speed = random(1, 3);
         this.hb = new HealthBar(5);
+        this.vel = new Vec2();
+        this.elevation = this.pos.y;
+        this.hit = false;
     }
 
     update()
@@ -18,12 +21,26 @@ class Zombie extends Animatable
         const dirVec = player.pos.copy().sub(offset).sub(this.pos);
 
         if(dirVec.dist() > adapt(100)) {
-            this.setAnim(this.textures.walk);
-            const vel = dirVec.copy().normalize().mult(this.speed).modify(adapt);
-            this.setDir(vel.x);
-            this.pos.add(vel);
+            if(this.vel.dist() < 1 && this.pos.y >= this.elevation) {
+                this.setAnim(this.textures.walk);
+                const vel = dirVec.copy().normalize().mult(this.speed).modify(adapt);
+                this.setDir(vel.x);
+                this.pos.add(vel);
+                this.hit = false;
+            } else {
+                this.setAnim(this.textures.idle);
+            }
         } else {
             this.setAnim(this.textures.attack);
+            player.damage(0.1);
+        }
+
+        this.pos.add(this.vel);
+        this.vel.mult(0.85);
+
+        if(this.pos.y < this.elevation) {
+            const gravity = adapt(2);
+            this.pos.y += gravity;
         }
     }
 
@@ -38,15 +55,24 @@ class Zombie extends Animatable
         this.hb.decrease(amount);
 
         if(this.hb.dead) {
-            const tex = Math.random() > 0.5 ? textures.zombie.male : textures.zombie.female;
-            zombies.splice(zombies.indexOf(this), 1, new Zombie(new Vec2(width / 2 + adapt(Math.random() * width), height / 2 + adapt(60)), tex));
+            this.setAnim(this.textures.dead, { interruptible: false, priority: true, callback: () => {
+                const tex = Math.random() > 0.5 ? textures.zombie.male : textures.zombie.female;
+                zombies.splice(zombies.indexOf(this), 1, new Zombie(new Vec2(adapt(Math.random() * width), height / 2 + adapt(60)), tex));
+            } })
         }
+    }
+
+    getTopLeft()
+    {
+        const halfdims = this.dims.copy().div(2);
+        const pos = this.pos.copy().sub(halfdims);
+
+        return pos;
     }
 
     collided(pos, dims)
     {
-        const halfdims = this.dims.copy().div(2);
-        const zombiePos = this.pos.copy().sub(halfdims);
+        const zombiePos = this.getTopLeft();
 
         const [ x1, y1 ] = [...zombiePos];
         const [ w1, h1 ] = [...this.dims];
@@ -70,8 +96,8 @@ class Zombie extends Animatable
 
         ctx.drawImage(texture, 0, 0, ...this.dims);
 
-        ctx.strokeStyle = "red";
-        ctx.strokeRect(0, 0, ...this.dims);
+        // ctx.strokeStyle = "red";
+        // ctx.strokeRect(0, 0, ...this.dims);
 
         ctx.restore();
 

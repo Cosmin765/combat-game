@@ -6,6 +6,7 @@ let cvs, ctx, joystick, player, ratio;
 const offset = new Vec2(0, 0);
 const zombies = [];
 const buttons = [];
+const projectiles = [];
 
 const resolutions = [
     [ 640, 360 ],
@@ -18,7 +19,7 @@ const resolutions = [
     [ 1920, 1080]
 ];
 
-const [ width, height ] = resolutions[2];
+const [ width, height ] = resolutions[7];
 
 const adapt = val => width / 960 * val;
 const random = (min, max) => Math.random() * (max - min) + min;
@@ -26,24 +27,27 @@ const random = (min, max) => Math.random() * (max - min) + min;
 const textures = {
   player: {
     idle: [],
-    slide: [],
     run: [],
     attack: [],
     throw: [],
+    dead: [],
   },
   zombie: {
     male: {
         idle: [],
         walk: [],
         attack: [],
+        dead: [],
     },
     female: {
         idle: [],
         walk: [],
         attack: [],
+        dead: [],
     },
   },
   background: null,
+  projectile: null,
 };
 
 function loadTexture(filename)
@@ -93,34 +97,36 @@ async function main()
         ["player/Run__00", textures.player.run, 10],
         ["player/Attack__00", textures.player.attack, 10],
         ["player/Throw__00", textures.player.throw, 10],
+        ["player/Dead__00", textures.player.dead, 10],
         ["zombie/male/Idle", textures.zombie.male.idle, 15],
         ["zombie/male/Walk", textures.zombie.male.walk, 10],
         ["zombie/male/Attack", textures.zombie.male.attack, 8],
+        ["zombie/male/Dead", textures.zombie.male.dead, 12],
         ["zombie/female/Idle", textures.zombie.female.idle, 15],
         ["zombie/female/Walk", textures.zombie.female.walk, 10],
         ["zombie/female/Attack", textures.zombie.female.attack, 8],
-      ];
+        ["zombie/female/Dead", textures.zombie.female.dead, 12],
+    ];
       
     await loadAnimations(options);
     textures.background = await loadTexture("Background.png");
+    textures.projectile = await loadTexture("player/Kunai.png");
 
     ctx = cvs.getContext("2d");
     setupEvents();
     
     joystick = new Joystick(new Vec2(adapt(150), height - adapt(150)));
-    buttons.push(new Button(new Vec2(width - adapt(150), height - adapt(220)), "A"));
-    buttons.push(new Button(new Vec2(width - adapt(210), height - adapt(120)), "B"));
-    buttons.push(new Button(new Vec2(width - adapt(90), height - adapt(120)), "C"));
+    buttons.push(new Button(new Vec2(width - adapt(210), height - adapt(150)), "A"));
+    buttons.push(new Button(new Vec2(width - adapt(90), height - adapt(150)), "B"));
     
     player = new Player(new Vec2(width / 2, height / 2 + adapt(60)));
     
-    for(let i = 0; i < 5; ++i)
+    for(let i = 0; i < 1; ++i)
     {
         const tex = Math.random() > 0.5 ? textures.zombie.male : textures.zombie.female;
-        const zombie = new Zombie(new Vec2(width / 2 + adapt(Math.random() * 500), height / 2 + adapt(60)), tex);
+        const zombie = new Zombie(new Vec2(adapt(Math.random() * width), height / 2 + adapt(60)), tex);
         zombies.push(zombie);
     }
-
     
     requestAnimationFrame(render);
 }
@@ -133,14 +139,25 @@ function update()
     else player.setAnim(textures.player.idle);
 
     if(buttons[0].pressed)
-        player.setAnim(textures.player.attack, false);
+        player.setAnim(textures.player.attack, { interruptible: false, priority: false });
 
     if(buttons[1].pressed)
-        player.setAnim(textures.player.throw, false);
+        if(player.ableToThrow) {
+            player.setAnim(textures.player.throw, { interruptible: false, priority: false, callback: () => {
+                const projectile = new Projectile(new Vec2(player.pos.x - offset.x, height / 2), player.dir, textures.projectile);
+                projectiles.push(projectile);
+                player.ableToThrow = false;
+    
+                setTimeout(() => player.ableToThrow = true, 1000);
+            } });
+        }
 
     player.setDir(dir.x);
 
     player.update();
+
+    for(const projectile of projectiles)
+        projectile.update();
 
     for(const zombie of zombies)
         zombie.update();
@@ -169,10 +186,14 @@ function render(time)
         for(const zombie of zombies)
             zombie.render();
         
+        for(const projectile of projectiles)
+            projectile.render();
+
         ctx.restore();
     }
 
     player.render();
+
 
     joystick.render();
 
