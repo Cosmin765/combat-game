@@ -39,9 +39,13 @@ class Player extends Animatable
     {
         this.hb.decrease(amount);
 
-        // if(this.hb.dead) {
-        //     this.setAnim(textures.player.dead);
-        // }
+        if(this.hb.dead) {
+            this.setAnim(textures.player.dead, {
+              interruptible: false, priority: false, callback: () => {
+                  player = null;
+                }
+            });
+        }
     }
 
     getTopLeft(dims = this.dims)

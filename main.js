@@ -134,10 +134,10 @@ async function main()
 function update()
 {
     const dir = joystick.dir();
-
+    
     if(dir.dist() > 0) player.setAnim(textures.player.run);
     else player.setAnim(textures.player.idle);
-
+    
     if(buttons[0].pressed)
         player.setAnim(textures.player.attack, { interruptible: false, priority: false });
 

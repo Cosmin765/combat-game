@@ -32,11 +32,14 @@ class Animatable
     {
         const { interruptible, priority, callback } = options;
 
-        if(anim === this.anim) return;
+        if(anim === this.anim) {
+          return;
+        }
 
         if(this.interruptible || this.acc === 0 || priority)
         {
-            this.acc = this.animIndex = 0;
+            this.animIndex = 0;
+            this.acc = 1;
 
             this.anim = anim;
             this.interruptible = interruptible;
