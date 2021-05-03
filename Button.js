@@ -9,6 +9,7 @@ class Button extends Interactive
         this.r = r;
         this.letter = letter;
         this.pressed = false;
+        this.disabled = false;
     }
 
     press()
@@ -24,7 +25,11 @@ class Button extends Interactive
     render()
     {
         ctx.strokeStyle = this.pressed ? "red" : "#00ccff";
-        ctx.fillStyle = this.pressed ? "rgba(99, 159, 255, 0.8)" : "rgba(28, 106, 232, 0.5)";
+        if(this.disabled) {
+            ctx.fillStyle = "grey";
+        } else {
+            ctx.fillStyle = this.pressed ? "rgba(99, 159, 255, 0.8)" : "rgba(28, 106, 232, 0.5)";
+        }
         ctx.beginPath();
         ctx.arc(...this.pos, this.r, 0, 2 * Math.PI);
         ctx.stroke();

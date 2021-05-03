@@ -8,10 +8,16 @@ class HealthBar
         this.dead = false;
     }
 
+    set(amount)
+    {
+        this.curr = this.max * amount;
+        if(this.curr > 0) this.dead = false;
+    }
+
     decrease(amount)
     {
         this.curr -= amount;
-        if(this.curr < 0) {
+        if(this.curr <= 0) {
             this.curr = 0;
             this.dead = true;
         }

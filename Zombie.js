@@ -7,7 +7,7 @@ class Zombie extends Animatable
         this.setAnim(tex.idle);
         this.dir = 1;
         this.textures = tex;
-        this.speed = random(1, 3);
+        this.speed = random(1, 4);
         this.hb = new HealthBar(5);
         this.vel = new Vec2();
         this.elevation = this.pos.y;
@@ -30,9 +30,13 @@ class Zombie extends Animatable
             } else {
                 this.setAnim(this.textures.idle);
             }
-        } else {
-            this.setAnim(this.textures.attack);
-            player.damage(0.1);
+        } else if(this.anim !== this.textures.dead) {
+            if(!player.charging) {
+                this.setAnim(this.textures.attack);
+                player.damage(0.03);
+            } else {
+                this.damage(1);
+            }
         }
 
         this.pos.add(this.vel);
@@ -56,8 +60,16 @@ class Zombie extends Animatable
 
         if(this.hb.dead) {
             this.setAnim(this.textures.dead, { interruptible: false, priority: true, callback: () => {
-                const tex = Math.random() > 0.5 ? textures.zombie.male : textures.zombie.female;
-                zombies.splice(zombies.indexOf(this), 1, new Zombie(new Vec2(adapt(Math.random() * width), height / 2 + adapt(60)), tex));
+                zombies.push(spawnZombie());
+                if(Math.random() < 0.3)
+                    zombies.push(spawnZombie());
+
+                if(Math.random() < 0.5)
+                    healings.push(new Healing(new Vec2(this.pos.x, height - adapt(150))));
+                
+                scoreBoard.add(20);
+
+                zombies.splice(zombies.indexOf(this), 1);
             } })
         }
     }

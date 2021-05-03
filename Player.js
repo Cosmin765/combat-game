@@ -7,6 +7,8 @@ class Player extends Animatable
         this.dir = 1;
         this.hb = new HealthBar(10);
         this.ableToThrow = true;
+        this.charging = false;
+        this.ableToCharge = true;
     }
 
     update()
@@ -15,7 +17,7 @@ class Player extends Animatable
 
         if(this.anim === textures.player.run) {
             if((player.dir < 0 && adapt(-offset.x) > adapt(20)) || (this.dir > 0 && adapt(-offset.x) < adapt(height) * textures.background.width / textures.background.height - adapt(width + 20)))
-                offset.x -= adapt(this.dir * 8);
+                offset.x -= adapt(this.dir * (8 + this.charging * 30));
         }
 
         if(this.anim === textures.player.attack) {
@@ -27,10 +29,18 @@ class Player extends Animatable
                 const dirVec = zombie.getTopLeft().copy().sub(playerPos);
 
                 if(zombie.collided(playerPos, dims.copy()) && dirVec.x * this.dir >= 0 && !zombie.hit) {
-                    zombie.damage(1);
+                    zombie.damage(2);
                     zombie.vel.set(20 * this.dir, -5).modify(adapt);
                     zombie.hit = true;
                 }
+            }
+        }
+
+        for(const healing of healings)
+        {
+            if(healing.collided(this.getTopLeft(), this.dims.copy())) {
+                this.hb.increase(2);
+                healings.splice(healings.indexOf(healing), 1);
             }
         }
     }
@@ -42,7 +52,9 @@ class Player extends Animatable
         if(this.hb.dead) {
             this.setAnim(textures.player.dead, {
               interruptible: false, priority: false, callback: () => {
-                  player = null;
+                    playerDead = true;
+                    $(".panel").style.transform = "scale(1, 1) rotate(90deg)";
+                    $(".score").innerHTML = "Your score is: " + scoreBoard.value;
                 }
             });
         }
@@ -58,6 +70,7 @@ class Player extends Animatable
 
     setDir(dir)
     {
+        if(!this.interruptible) return;
         if(dir === 0) return;
         this.dir = dir < 0 ? -1 : 1;
     }

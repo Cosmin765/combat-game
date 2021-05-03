@@ -26,7 +26,7 @@ class Projectile
             const projectilePos = this.getTopLeft();
 
             if(zombie.collided(projectilePos, this.dims.copy())) {
-                zombie.damage(3);
+                zombie.damage(zombie.hb.max * 0.75);
                 this.remove();
                 break;
             }

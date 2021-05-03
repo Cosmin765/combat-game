@@ -2,9 +2,10 @@ window.onload = main;
 
 const $ = name => document.querySelector(name);
 
-let cvs, ctx, joystick, player, ratio;
+let cvs, ctx, joystick, player, ratio, playerDead = false, scoreBoard;
 const offset = new Vec2(0, 0);
-const zombies = [];
+let zombies = [];
+let healings = [];
 const buttons = [];
 const projectiles = [];
 
@@ -16,7 +17,7 @@ const resolutions = [
     [ 1280, 720 ],
     [ 1366, 768 ],
     [ 1600, 900 ],
-    [ 1920, 1080]
+    [ 1920, 1080 ]
 ];
 
 const [ width, height ] = resolutions[7];
@@ -48,7 +49,21 @@ const textures = {
   },
   background: null,
   projectile: null,
+  heart: null,
 };
+
+const sounds = {
+    music: null,
+};
+
+function loadAudio(filename)
+{
+    return new Promise(resolve => {
+        const audio = new Audio(`./assets/audio/${filename}`);
+    
+        audio.addEventListener("canplaythrough", () => resolve(audio));
+    });
+}
 
 function loadTexture(filename)
 {
@@ -111,50 +126,93 @@ async function main()
     await loadAnimations(options);
     textures.background = await loadTexture("Background.png");
     textures.projectile = await loadTexture("player/Kunai.png");
+    textures.heart = await loadTexture("heart.png");
+
+    sounds.music = await loadAudio("suspense.mp3");
+    sounds.music.loop = true;
+
+    $(".loader").style.display = "none";
+    $(".start").style.display = "block";
 
     ctx = cvs.getContext("2d");
     setupEvents();
     
     joystick = new Joystick(new Vec2(adapt(150), height - adapt(150)));
-    buttons.push(new Button(new Vec2(width - adapt(210), height - adapt(150)), "A"));
-    buttons.push(new Button(new Vec2(width - adapt(90), height - adapt(150)), "B"));
+    buttons.push(new Button(new Vec2(width - adapt(150), height - adapt(200)), "A"));
+    buttons.push(new Button(new Vec2(width - adapt(210), height - adapt(100)), "B"));
+    buttons.push(new Button(new Vec2(width - adapt(90), height - adapt(100)), "C"));
     
     player = new Player(new Vec2(width / 2, height / 2 + adapt(60)));
+
+    scoreBoard = new ScoreBoard(new Vec2(50, 50).modify(adapt));
     
-    for(let i = 0; i < 1; ++i)
-    {
-        const tex = Math.random() > 0.5 ? textures.zombie.male : textures.zombie.female;
-        const zombie = new Zombie(new Vec2(adapt(Math.random() * width), height / 2 + adapt(60)), tex);
-        zombies.push(zombie);
-    }
+    for(let i = 0; i < 4; ++i)
+        zombies.push(spawnZombie());
+
+    offset.x = -(height * textures.background.width / textures.background.height) / 2;
     
-    requestAnimationFrame(render);
+    $(".start").addEventListener("click", () => {
+        cvs.style.display = "block";
+        $(".start").style.display = "none";
+        sounds.music.play().catch(e => {});
+
+        requestAnimationFrame(render);
+    });
+}
+
+function spawnZombie()
+{
+    const tex = Math.random() > 0.5 ? textures.zombie.male : textures.zombie.female;
+    const x = Math.random() > 0.5 ? adapt(-50) : height * textures.background.width / textures.background.height + adapt(50);
+    const pos = new Vec2(x, height / 2 + adapt(60));
+    const zombie = new Zombie(pos, tex);
+    return zombie;
 }
 
 function update()
 {
     const dir = joystick.dir();
     
-    if(dir.dist() > 0) player.setAnim(textures.player.run);
-    else player.setAnim(textures.player.idle);
+    if(!playerDead) {
+        if(dir.dist() > 0) player.setAnim(textures.player.run);
+        else player.setAnim(textures.player.idle);
+        
+        if(buttons[0].pressed)
+            player.setAnim(textures.player.attack, { interruptible: false });
     
-    if(buttons[0].pressed)
-        player.setAnim(textures.player.attack, { interruptible: false, priority: false });
-
-    if(buttons[1].pressed)
-        if(player.ableToThrow) {
-            player.setAnim(textures.player.throw, { interruptible: false, priority: false, callback: () => {
-                const projectile = new Projectile(new Vec2(player.pos.x - offset.x, height / 2), player.dir, textures.projectile);
-                projectiles.push(projectile);
-                player.ableToThrow = false;
-    
-                setTimeout(() => player.ableToThrow = true, 1000);
-            } });
+        if(buttons[1].pressed)
+            if(player.ableToThrow) {
+                player.setAnim(textures.player.throw, { interruptible: false, callback: () => {
+                    const projectile = new Projectile(new Vec2(player.pos.x - offset.x, height / 2), player.dir, textures.projectile);
+                    projectiles.push(projectile);
+                    player.ableToThrow = false;
+                    buttons[1].disabled = true;
+        
+                    setTimeout(() => {
+                        player.ableToThrow = true;
+                        buttons[1].disabled = false;
+                    }, 1000);
+                } });
+            }
+        
+        if(buttons[2].pressed && player.ableToCharge) {
+            player.charging = true;
+            player.ableToCharge = false;
+            buttons[2].disabled = true;
+            setTimeout(() => {
+                player.charging = false;
+                setTimeout(() => {
+                    player.ableToCharge = true;
+                    buttons[2].disabled = false;
+                }, 5000);
+            }, 250);
         }
+    
+        player.setDir(dir.x);
+    
+        player.update();
+    }
 
-    player.setDir(dir.x);
-
-    player.update();
 
     for(const projectile of projectiles)
         projectile.update();
@@ -189,11 +247,15 @@ function render(time)
         for(const projectile of projectiles)
             projectile.render();
 
+        for(const healing of healings)
+            healing.render();
+
         ctx.restore();
     }
 
     player.render();
 
+    scoreBoard.render();
 
     joystick.render();
 
@@ -291,5 +353,18 @@ function setupEvents()
                 btn.release();
             }
         }
+    });
+
+    $(".panel button").addEventListener("click", () => {
+        zombies = [];
+        healings = [];
+        for(let i = 0; i < 4; ++i)
+            zombies.push(spawnZombie());
+        
+        scoreBoard.update(0);
+        playerDead = false;
+        player.hb.set(1);
+        offset.x = -(height * textures.background.width / textures.background.height) / 2;
+        $(".panel").style.transform = "scale(0, 0) rotate(90deg)";
     });
 }

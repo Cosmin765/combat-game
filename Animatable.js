@@ -26,15 +26,22 @@ class Animatable
         this.acc %= (this.anim.length * this.animDelay) | 0;
 
         this.animIndex = (this.acc / this.animDelay) | 0;
+
+        if(this.animIndex === this.anim.length - 1) {
+            this.callback();
+            this.callback = () => {};
+        }
     }
     
     setAnim(anim, options = { interruptible: true, priority: false, callback: () => {} })
     {
-        const { interruptible, priority, callback } = options;
+        let { interruptible, priority, callback } = options;
 
-        if(anim === this.anim) {
-          return;
-        }
+        if(anim === this.anim) return;
+        
+        if(interruptible === undefined) interruptible = true;
+        if(priority === undefined) priority = false;
+        if(callback === undefined) callback = () => {};
 
         if(this.interruptible || this.acc === 0 || priority)
         {
@@ -44,10 +51,7 @@ class Animatable
             this.anim = anim;
             this.interruptible = interruptible;
 
-            this.callback();
-
-            if(callback) this.callback = callback;
-            else this.callback = () => {};
+            this.callback = callback;
         }
 
         this.updateDims();
